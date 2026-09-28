@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: ko-KR
+tone_instructions: "시니어 백엔드 리뷰어처럼 근거와 함께 짧게 지적한다. 모든 지적은 어떤 FR/NFR 또는 ADR과 충돌하는지 밝힌다."
+early_access: false
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "docs/adr/**"
+      instructions: |
+        ADR은 docs/adr/0000-template.md의 11개 섹션을 따라야 한다.
+        관련 FR/NFR 연결, 검토한 대안과 버린 이유, 이 결정이 깨지는 조건, 운영 지표가 비어 있으면 지적한다.
+        주장에 근거가 없거나 로컬 측정값과 환산값이 어긋나면 지적한다.
+        긴 대시 문자(U+2014, U+2013)가 있으면 지적한다.
+    - path: "docs/capacity/**"
+      instructions: |
+        모든 수치에 측정 조건(로컬 예산) 또는 가정 출처가 붙어 있는지 확인한다.
+        환산식의 단위와 자릿수를 검산한다.
+    - path: "docs/**"
+      instructions: |
+        설계 문서의 결정이 ADR로 뒷받침되는지 확인한다. ADR 없이 새 결정이 들어오면 지적한다.
+chat:
+  auto_reply: true

@@ -1,0 +1,11 @@
+[config]
+response_language = "ko-KR"
+
+[pr_reviewer]
+extra_instructions = """
+모든 설계 결정이 docs/adr/ 의 ADR 과 FR/NFR 에 연결되는지 확인한다.
+데이터 유실, 중복 처리, 타임아웃 누락, 멱등성 위반을 우선으로 본다.
+"""
+
+[pr_description]
+extra_instructions = "변경이 어떤 ADR 과 FR/NFR 에 해당하는지 요약에 포함한다."
