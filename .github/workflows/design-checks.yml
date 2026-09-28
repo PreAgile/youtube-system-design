@@ -2,7 +2,7 @@ name: design-checks
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+    types: [opened, edited, synchronize, reopened]
   push:
     branches: [main]
 
@@ -23,7 +23,6 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
-          ALLOW_ADR_AMEND: ${{ contains(github.event.pull_request.labels.*.name, 'adr-format-only') }}
         run: python3 scripts/check_design.py --base origin/${{ github.base_ref }}
       - name: ADR 구조, 요구사항 연결 검사
         if: github.event_name == 'push'

@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ADR_DIR = ROOT / "docs" / "adr"
 SCOPE = ROOT / "docs" / "design" / "00-scope.md"
 ADR_INDEX = ADR_DIR / "README.md"
+PR_TEMPLATE = ROOT / ".github" / "pull_request_template.md"
 
 SECTIONS = [
     "맥락",
@@ -34,9 +35,11 @@ SECTIONS = [
     "운영에서 볼 지표와 장애 대응",
     "예상 꼬리질문",
 ]
+CATEGORIES = ("제품 설계", "프로젝트 운영")
 PLACEHOLDER = "(결정자 작성)"
-STATUS_RE = re.compile(r"^(Proposed|Accepted|Rejected|Superseded by ADR-\d{4})$")
+STATUS_RE = re.compile(r"^(Proposed|Accepted|Rejected|Superseded by ADR-(\d{4}))$")
 REQ_ID_RE = re.compile(r"\b(FR-\d+|NFR-\d+|L-\d+)\b")
+ADR_ID_RE = re.compile(r"\bADR-(\d{4})\b")
 DASHES = (chr(0x2014), chr(0x2013))
 
 errors: list[str] = []
@@ -51,7 +54,7 @@ def header_value(text: str, key: str) -> str:
     return m.group(1) if m else ""
 
 
-def split_sections(text: str) -> dict[str, str]:
+def split_sections(text: str) -> dict[str, tuple[int, str]]:
     parts = re.split(r"^## (\d+)\. (.+)$", text, flags=re.M)
     found = {}
     for i in range(1, len(parts), 3):
@@ -62,9 +65,15 @@ def split_sections(text: str) -> dict[str, str]:
 
 
 def count_options(body: str) -> int:
-    subsections = len(re.findall(r"^### ", body, re.M))
-    table_rows = max(0, len(re.findall(r"^\|", body, re.M)) - 2)
-    list_items = len(re.findall(r"^- ", body, re.M))
+    """선택지 수. 장점, 단점 같은 설명 불릿은 세지 않는다.
+
+    선택지는 '### A. 이름' 소제목, 'A. 이름'으로 시작하는 표 행,
+    '- A. 이름' 최상위 불릿 중 하나의 형식으로 쓴다.
+    """
+    label = r"[A-Z]\.\s+\S"
+    subsections = len(re.findall(rf"^### {label}", body, re.M))
+    table_rows = len(re.findall(rf"^\|\s*{label}", body, re.M))
+    list_items = len(re.findall(rf"^- {label}", body, re.M))
     return max(subsections, table_rows, list_items)
 
 
@@ -76,7 +85,7 @@ def adr_files() -> list[Path]:
     return sorted(p for p in ADR_DIR.glob("[0-9][0-9][0-9][0-9]-*.md") if not p.name.startswith("0000-"))
 
 
-def check_adr(path: Path, known_ids: set[str]) -> str:
+def check_adr(path: Path, known_ids: set[str], adr_numbers: set[str]) -> str:
     text = path.read_text()
     number = path.name[:4]
 
@@ -84,12 +93,21 @@ def check_adr(path: Path, known_ids: set[str]) -> str:
         fail(path, f"제목은 '# ADR-{number}: 제목' 형식이어야 합니다")
 
     status = header_value(text, "상태")
-    if not STATUS_RE.match(status):
+    m = STATUS_RE.match(status)
+    if not m:
         fail(path, f"상태 값이 올바르지 않습니다: '{status}'")
+    elif m.group(2) and m.group(2) not in adr_numbers:
+        fail(path, f"대체한 ADR-{m.group(2)} 파일이 없습니다")
+
+    category = header_value(text, "분류")
+    if category not in CATEGORIES:
+        fail(path, f"분류는 {' / '.join(CATEGORIES)} 중 하나여야 합니다: '{category}'")
 
     reqs = header_value(text, "관련 FR/NFR")
     if not reqs:
         fail(path, "관련 FR/NFR이 비어 있습니다 (Q2)")
+    elif category == "제품 설계" and not REQ_ID_RE.search(reqs):
+        fail(path, "제품 설계 ADR은 관련 FR/NFR에 요구사항 ID를 하나 이상 적어야 합니다 (Q2)")
     for rid in REQ_ID_RE.findall(text):
         if rid not in known_ids:
             fail(path, f"{rid}는 docs/design/00-scope.md에 정의되지 않았습니다")
@@ -105,7 +123,7 @@ def check_adr(path: Path, known_ids: set[str]) -> str:
         return sections.get(name, (0, ""))[1]
 
     if count_options(body("선택지")) < 2:
-        fail(path, "선택지가 2개 미만입니다 (Q3)")
+        fail(path, "선택지가 2개 미만입니다. 선택지는 'A. 이름' 형식으로 씁니다 (Q3)")
     for name, q in (("결과", "Q4"), ("이 결정이 깨지는 조건", "Q7"), ("운영에서 볼 지표와 장애 대응", "Q8")):
         if not body(name):
             fail(path, f"'{name}' 섹션이 비어 있습니다 ({q})")
@@ -132,16 +150,30 @@ def check_index(statuses: dict[str, str]) -> None:
         elif listed[number][1] != status:
             fail(ADR_INDEX, f"ADR-{number} 상태가 파일({status})과 목록({listed[number][1]})에서 다릅니다")
     for number, (link, _) in listed.items():
-        if not (ADR_DIR / link).exists():
+        if not Path(link).name.startswith(f"{number}-"):
+            fail(ADR_INDEX, f"ADR-{number} 행이 다른 번호의 파일을 가리킵니다: {link}")
+        elif not (ADR_DIR / link).exists():
             fail(ADR_INDEX, f"ADR-{number} 링크 대상이 없습니다: {link}")
 
 
+def is_subsequence(old: list[str], new: list[str]) -> bool:
+    it = iter(new)
+    return all(line in it for line in old)
+
+
 def check_accepted_immutable(base: str) -> None:
-    diff = subprocess.run(
+    """Accepted ADR에 허용되는 변경은 두 가지뿐이다.
+
+    1. 상태를 'Superseded by ADR-XXXX'로 바꾸는 것 (본문은 그대로)
+    2. 형식 보완: 기존 줄을 하나도 바꾸거나 지우지 않고 줄을 추가하는 것.
+       결정 섹션은 한 글자도 바뀌면 안 된다.
+    """
+    changed = subprocess.run(
         ["git", "diff", "--name-only", f"{base}...HEAD", "--", "docs/adr/"],
         cwd=ROOT, capture_output=True, text=True, check=True,
     ).stdout.split()
-    for rel in diff:
+    status_row = re.compile(r"^\|\s*상태\s*\|")
+    for rel in changed:
         path = ROOT / rel
         old = subprocess.run(["git", "show", f"{base}:{rel}"], cwd=ROOT, capture_output=True, text=True)
         if old.returncode != 0 or header_value(old.stdout, "상태") != "Accepted":
@@ -149,12 +181,18 @@ def check_accepted_immutable(base: str) -> None:
         if not path.exists():
             fail(path, "Accepted ADR은 삭제할 수 없습니다. 새 ADR로 대체하세요")
             continue
-        strip_status = lambda t: re.sub(r"^\|\s*상태\s*\|.*$", "", t, flags=re.M)
         new = path.read_text()
-        if strip_status(old.stdout) != strip_status(new):
-            fail(path, "Accepted ADR의 본문이 바뀌었습니다. 상태를 'Superseded by ADR-XXXX'로 바꾸는 것 외에는 새 ADR로 대체하세요")
-        elif not header_value(new, "상태").startswith("Superseded by"):
+        new_status = header_value(new, "상태")
+        if new_status not in ("Accepted",) and not new_status.startswith("Superseded by"):
             fail(path, "Accepted ADR의 상태는 Superseded로만 바꿀 수 있습니다")
+
+        def lines(t: str) -> list[str]:
+            return [l for l in t.splitlines() if l.strip() and not status_row.match(l)]
+
+        if not is_subsequence(lines(old.stdout), lines(new)):
+            fail(path, "Accepted ADR의 기존 줄이 바뀌거나 지워졌습니다. 형식 보완은 줄 추가만 허용하고, 내용 변경은 새 ADR로 대체하세요")
+        if split_sections(old.stdout).get("결정") != split_sections(new).get("결정"):
+            fail(path, "Accepted ADR의 결정 섹션이 바뀌었습니다")
 
 
 def check_links_and_dashes() -> None:
@@ -173,13 +211,21 @@ def check_links_and_dashes() -> None:
                     fail(path, f"깨진 상대 링크: {target}")
 
 
-def check_pr_body(body: str) -> None:
-    pseudo = ROOT / ".github" / "pull_request_template.md"
-    if not re.search(r"\b(ADR-\d{4}|FR-\d+|NFR-\d+)\b", body):
-        fail(pseudo, "PR 본문에 관련 ADR 또는 FR/NFR이 없습니다 (Q2)")
-    m = re.search(r"잃는 것[^:\n]*:\s*(.*)", body)
+def check_pr_body(body: str, known_ids: set[str], adr_numbers: set[str]) -> None:
+    req_ids = [r for r in re.findall(r"\b(FR-\d+|NFR-\d+)\b", body)]
+    adr_ids = ADR_ID_RE.findall(body)
+    if not req_ids and not adr_ids:
+        fail(PR_TEMPLATE, "PR 본문에 관련 ADR 또는 FR/NFR이 없습니다 (Q2)")
+    for rid in req_ids:
+        if rid not in known_ids:
+            fail(PR_TEMPLATE, f"PR 본문의 {rid}는 정의되지 않은 요구사항입니다")
+    for number in adr_ids:
+        if number not in adr_numbers:
+            fail(PR_TEMPLATE, f"PR 본문의 ADR-{number} 파일이 없습니다")
+    # 같은 줄의 값만 본다. 줄바꿈을 넘어 다음 항목을 값으로 읽지 않게 한다
+    m = re.search(r"잃는 것[^:\n]*:[ \t]*(.*)", body)
     if m is None or not m.group(1).strip():
-        fail(pseudo, "PR 본문의 '잃는 것' 항목이 비어 있습니다 (Q4)")
+        fail(PR_TEMPLATE, "PR 본문의 '잃는 것' 항목이 비어 있습니다 (Q4)")
 
 
 def main() -> int:
@@ -188,18 +234,15 @@ def main() -> int:
     args = parser.parse_args()
 
     known_ids = defined_requirement_ids()
-    statuses = {p.name[:4]: check_adr(p, known_ids) for p in adr_files()}
+    files = adr_files()
+    adr_numbers = {p.name[:4] for p in files}
+    statuses = {p.name[:4]: check_adr(p, known_ids, adr_numbers) for p in files}
     check_index(statuses)
     check_links_and_dashes()
     if args.base:
-        if os.environ.get("ALLOW_ADR_AMEND") == "true":
-            # adr-format-only 라벨: 내용이 아닌 형식만 고칠 때. 사유를 PR 본문에 남겨야 한다
-            if "형식 변경 사유" not in os.environ.get("PR_BODY", ""):
-                fail(ROOT / ".github" / "pull_request_template.md", "adr-format-only 라벨을 쓰면 PR 본문에 '형식 변경 사유'를 적어야 합니다")
-        else:
-            check_accepted_immutable(args.base)
+        check_accepted_immutable(args.base)
     if os.environ.get("PR_BODY") is not None:
-        check_pr_body(os.environ["PR_BODY"])
+        check_pr_body(os.environ["PR_BODY"], known_ids, adr_numbers)
 
     if errors:
         print("설계 문서 검사 실패:")

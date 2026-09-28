@@ -3,9 +3,10 @@
 | 항목 | 값 |
 |---|---|
 | 상태 | Proposed / Accepted / Rejected / Superseded by ADR-XXXX |
+| 분류 | 제품 설계 / 프로젝트 운영 |
 | 작성일 | YYYY-MM-DD |
 | 결정일 | YYYY-MM-DD |
-| 관련 FR/NFR | FR-?, NFR-? |
+| 관련 FR/NFR | FR-?, NFR-? (제품 설계 ADR은 ID 필수) |
 | 관련 ADR | ADR-XXXX |
 
 ## 1. 맥락
@@ -19,6 +20,8 @@
 | NFR-? | |
 
 ## 3. 선택지
+
+선택지는 `### A. 이름`, 표의 `| A. 이름 |`, `- A. 이름` 중 하나의 형식으로 씁니다. CI가 이 형식으로 선택지 수를 셉니다.
 
 ### A. 이름
 

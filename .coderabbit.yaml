@@ -45,6 +45,9 @@ reviews:
     - path: "docs/**"
       instructions: |
         설계 문서의 결정이 ADR로 뒷받침되는지 확인한다(Q9). ADR과 모순되는 서술은 [ADR 불일치]로 지적한다.
+    - path: "**"
+      instructions: |
+        모든 파일에 docs/review-policy.md의 Q1~Q10과 코멘트 분류를 적용한다. 이 PR이 담은 결정이 어떤 ADR에 근거하는지 먼저 확인한다.
     - path: "**/*.{go,java,kt}"
       instructions: |
         코드가 Accepted ADR과 일치하는지 먼저 본다(Q9).
