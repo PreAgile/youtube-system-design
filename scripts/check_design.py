@@ -192,7 +192,12 @@ def main() -> int:
     check_index(statuses)
     check_links_and_dashes()
     if args.base:
-        check_accepted_immutable(args.base)
+        if os.environ.get("ALLOW_ADR_AMEND") == "true":
+            # adr-format-only 라벨: 내용이 아닌 형식만 고칠 때. 사유를 PR 본문에 남겨야 한다
+            if "형식 변경 사유" not in os.environ.get("PR_BODY", ""):
+                fail(ROOT / ".github" / "pull_request_template.md", "adr-format-only 라벨을 쓰면 PR 본문에 '형식 변경 사유'를 적어야 합니다")
+        else:
+            check_accepted_immutable(args.base)
     if os.environ.get("PR_BODY") is not None:
         check_pr_body(os.environ["PR_BODY"])
 
