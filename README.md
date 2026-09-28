@@ -42,6 +42,5 @@ excalidraw/     다이어그램 원본 (.excalidraw)
 | 서비스 | 설정 파일 |
 |---|---|
 | CodeRabbit | `.coderabbit.yaml` |
-| Gemini Code Assist | `.gemini/config.yaml`, `.gemini/styleguide.md` |
 | Qodo Merge | `.pr_agent.toml` |
 | Sourcery | 기본 설정 |
