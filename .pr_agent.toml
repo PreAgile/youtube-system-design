@@ -3,9 +3,11 @@ response_language = "ko-KR"
 
 [pr_reviewer]
 extra_instructions = """
-모든 설계 결정이 docs/adr/ 의 ADR 과 FR/NFR 에 연결되는지 확인한다.
-데이터 유실, 중복 처리, 타임아웃 누락, 멱등성 위반을 우선으로 본다.
+기준 문서는 docs/review-policy.md 이다. 코드 품질보다 결정의 논리를 먼저 검증한다.
+각 결정에 대해 요구사항 연결, 가장 강한 대안, 잃는 것과 감당 근거, 평가 결과와 결론의 일치, 깨지는 조건이 있는지 본다.
+결론을 반박할 가장 강한 반론을 하나 제시하고 문서가 답하는지 판정한다.
+코멘트 앞에 [논리 공백] [대안 누락] [트레이드오프 누락] [근거 부족] [깨지는 조건 모호] [ADR 불일치] [구현 결함] 중 하나를 붙인다.
 """
 
 [pr_description]
-extra_instructions = "변경이 어떤 ADR 과 FR/NFR 에 해당하는지 요약에 포함한다."
+extra_instructions = "변경이 어떤 ADR 과 FR/NFR 에 해당하는지, 이 변경의 트레이드오프가 무엇인지 요약에 포함한다."

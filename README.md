@@ -37,11 +37,10 @@ excalidraw/     다이어그램 원본 (.excalidraw)
 
 ## PR 리뷰
 
-모든 변경은 PR로 올리고, 아래 리뷰 봇의 지적을 ADR과 대조해 반영하거나 반박합니다.
+모든 변경은 PR로 올립니다. 리뷰는 코드 품질보다 결정의 논리(왜, 트레이드오프, 왜 최선인가)를 먼저 검증하며, 기준은 [docs/review-policy.md](docs/review-policy.md)입니다. CI(`scripts/check_design.py`)는 ADR 구조, 요구사항 연결, Accepted ADR 불변을 검사하고, 리뷰 봇은 같은 기준으로 논리의 빈틈을 찾습니다. 모든 지적은 반영하거나 근거를 들어 반박합니다.
 
 | 서비스 | 설정 파일 |
 |---|---|
 | CodeRabbit | `.coderabbit.yaml` |
-| Gemini Code Assist | `.gemini/config.yaml`, `.gemini/styleguide.md` |
 | Qodo Merge | `.pr_agent.toml` |
 | Sourcery | 기본 설정 |
