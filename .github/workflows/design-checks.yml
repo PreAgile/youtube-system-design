@@ -1,0 +1,29 @@
+name: design-checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  design-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: ADR 구조, 요구사항 연결, Accepted 불변 검사
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python3 scripts/check_design.py --base origin/${{ github.base_ref }}
+      - name: ADR 구조, 요구사항 연결 검사
+        if: github.event_name == 'push'
+        run: python3 scripts/check_design.py
