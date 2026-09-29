@@ -185,7 +185,7 @@ excalidraw/     다이어그램 원본 (.excalidraw)
 
 모든 변경은 브랜치에서 PR로 올립니다. 리뷰는 코드 품질보다 결정의 논리(왜, 트레이드오프, 왜 최선인가)를 먼저 검증하며, 기준은 [docs/review-policy.md](docs/review-policy.md)의 Q1~Q10입니다.
 
-1. PR 본문은 [PR 템플릿](.github/pull_request_template.md)을 따릅니다. 관련 FR/NFR, 결정, 얻는 것, 잃는 것, 버린 대안을 적습니다. PR 본문에 적은 ADR 번호는 파일이 실제로 있어야 합니다.
+1. PR 본문은 [PR 템플릿](.github/pull_request_template.md)을 따릅니다. 관련 FR/NFR, 결정, 얻는 것, 잃는 것, 버린 대안을 적습니다. PR 본문에 적은 ADR 번호는 파일이 실제로 있어야 합니다. 의존성 갱신인 Dependabot PR은 본문 검사를 건너뜁니다.
 2. CI(`design-checks`)가 구조를 검사하고, 리뷰 봇이 논리의 빈틈을 찾습니다.
 3. 모든 지적은 실제 문서와 공식 자료에 대조해 반영하거나, 근거를 들어 답글로 반박합니다. 봇의 지적을 그대로 받아들이지 않습니다.
 4. CI가 통과하고 지적을 모두 처리하면 머지합니다.
