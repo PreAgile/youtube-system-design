@@ -9,7 +9,7 @@
 | 0003 | 트랜스코딩 작업 큐 (Kafka / RabbitMQ / DB 기반 큐) | 예정 | FR-2, NFR-5 | W2 |
 | 0004 | 이벤트 스트림 (조회수, 업로드 완료) | 예정 | FR-5, NFR-6 | W2 |
 | 0005 | 메타데이터 저장소 (MySQL / PostgreSQL) | 예정 | FR-4, NFR-4, NFR-7 | W2 |
-| 0006 | 업로드 방식 (API 서버 경유 / Presigned Multipart) | 예정 | FR-1, NFR-2 | W2 |
+| [0006](0006-upload-path.md) | 업로드 방식 (API 서버 경유 / Presigned Multipart) | Proposed | FR-1, NFR-2, NFR-5, NFR-6, NFR-7, NFR-8 | W2 |
 | 0007 | 스트리밍 포맷 (HLS / DASH, 세그먼트 길이) | 예정 | FR-3, NFR-3 | W2 |
 | 0008 | 캐시 전략 (cache-aside, TTL, hot key) | 예정 | FR-4, NFR-4 | W6 |
 | 0009 | 조회수 집계 방식과 중복 제거 | 예정 | FR-5, NFR-6 | W7 |
