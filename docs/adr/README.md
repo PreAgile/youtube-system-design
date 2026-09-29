@@ -5,7 +5,7 @@
 | 번호 | 제목 | 상태 | 관련 요구사항 | 결정 예정 주차 |
 |---|---|---|---|---|
 | [0001](0001-record-decisions-with-adr.md) | 설계 결정을 ADR로 기록한다 | Accepted | 전체 | W1 |
-| [0002](0002-backend-language-and-framework.md) | 백엔드 언어와 프레임워크 | Proposed | FR-2, NFR-4, NFR-5, NFR-7 | W1 |
+| [0002](0002-backend-language-and-framework.md) | 백엔드 언어와 프레임워크 | Proposed | FR-2, FR-4, FR-5, NFR-4, NFR-5, NFR-7, NFR-8 | W1 |
 | 0003 | 트랜스코딩 작업 큐 (Kafka / RabbitMQ / DB 기반 큐) | 예정 | FR-2, NFR-5 | W2 |
 | 0004 | 이벤트 스트림 (조회수, 업로드 완료) | 예정 | FR-5, NFR-6 | W2 |
 | 0005 | 메타데이터 저장소 (MySQL / PostgreSQL) | 예정 | FR-4, NFR-4, NFR-7 | W2 |
