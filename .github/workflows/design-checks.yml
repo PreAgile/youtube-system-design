@@ -24,7 +24,7 @@ jobs:
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: python3 scripts/check_design.py --base origin/${{ github.base_ref }}
-      # 의존성 갱신 PR은 설계 결정이 아니므로 PR 본문 검사(요구사항 ID, 잃는 것)만 건너뛴다
+      # 의존성 갱신 PR은 설계 결정이 아니고 본문을 사람이 쓰지 않으므로 PR 본문 검사 전체를 건너뛴다
       - name: ADR 구조, Accepted 불변 검사 (Dependabot)
         if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
         run: python3 scripts/check_design.py --base origin/${{ github.base_ref }}
