@@ -96,8 +96,8 @@
 
 ```
 UPLOADING ──완료──▶ UPLOADED ──첫 작업 시작──▶ PROCESSING ──첫 해상도 READY──▶ PLAYABLE ──전 해상도 READY──▶ READY
-                                                  │
-                                                  └── 모든 해상도가 FAILED ──▶ FAILED ──재처리──▶ PROCESSING
+    │                                             │
+    └── 세션 만료, 업로드 소실 ──▶ ABORTED           └── 모든 해상도가 FAILED ──▶ FAILED ──재처리──▶ PROCESSING
 ```
 
 | 상태 | 뜻 | 크리에이터에게 | 시청자에게 |
@@ -108,13 +108,14 @@ UPLOADING ──완료──▶ UPLOADED ──첫 작업 시작──▶ PROCES
 | PLAYABLE | 하나 이상의 해상도 준비 | 해상도별 진행 상황, 실패한 해상도 표시 | 준비된 해상도로 재생 |
 | READY | 전 해상도 준비 | 완료 | 전 해상도 |
 | FAILED | 준비된 해상도 없이 모두 실패 | 실패, 재처리 가능(NFR-5) | 안 보임 |
+| ABORTED | 업로드가 완료되지 않고 끝남(세션 만료, 스토리지의 업로드 소실). 원본이 없어 재처리할 수 없는 끝 상태 | 업로드 실패, 다시 업로드 필요 | 안 보임 |
 
 ### 4-2. 업로드 완료: 세션과 영상을 한 트랜잭션으로
 
 스토리지의 멀티파트 완료는 DB 트랜잭션 밖에서 일어나는 외부 호출입니다. 그래서 순서와 경계를 이렇게 둡니다.
 
 1. `upload_sessions.status`를 읽습니다. `COMPLETED`면 스토리지를 부르지 않고 저장된 결과(`completed_size`, 영상 상태)를 그대로 돌려줍니다.
-2. `OPEN`이면 파트 목록과 합계를 검증하고 스토리지에 완료를 요청합니다. 업로드 세션이 이미 없다는 오류가 오면(앞선 요청이 스토리지 완료까지 하고 DB 반영 전에 죽은 경우) 객체 존재를 확인하고 3으로 갑니다.
+2. `OPEN`이면 파트 목록과 합계를 검증하고 스토리지에 완료를 요청합니다. 검증 단계의 파트 목록 조회든 완료 요청이든, 업로드 세션이 이미 없다는 오류나 같은 키에 객체가 이미 있다는 조건부 쓰기 실패(`412`)가 오면(앞선 요청이 스토리지 완료까지 하고 DB 반영 전에 죽은 경우) 객체의 크기와 체크섬을 확인하고 3으로 갑니다. 객체가 없으면 세션과 영상을 `ABORTED`로 바꿉니다. 판단 규칙은 [ADR-0006](../adr/0006-upload-path.md)의 완료의 멱등을 따릅니다.
 3. 한 트랜잭션에서 아래를 모두 바꿉니다.
 
 ```sql
@@ -127,7 +128,7 @@ UPDATE videos SET status = 'UPLOADED', updated_at = NOW()
 
 첫 UPDATE의 영향 행이 0이면 다른 요청이 먼저 완료한 것이므로, 트랜잭션을 되돌리고 1의 결과를 돌려줍니다.
 
-**만료 정리의 불변식:** 정리 작업은 `status = 'OPEN' AND expires_at < NOW()`인 세션만 대상으로 하고, 한 트랜잭션에서 세션을 `ABORTED`로 바꾼 뒤(`WHERE status = 'OPEN'` 조건부) 스토리지의 미완료 업로드를 중단합니다. `COMPLETED` 세션은 절대 건드리지 않습니다. 스토리지의 lifecycle 규칙(`AbortIncompleteMultipartUpload`)도 이미 완료된 업로드에는 영향이 없습니다([S3 문서](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpu-abort-incomplete-mpu-lifecycle-config.html)).
+**만료 정리의 불변식:** 정리 작업은 `status = 'OPEN' AND expires_at < NOW()`인 세션만 대상으로 하고, 한 트랜잭션에서 세션을 `ABORTED`로, 영상을 `UPLOADING`에서 `ABORTED`로 바꾼 뒤(각각 `WHERE status = 'OPEN'`, `WHERE status = 'UPLOADING'` 조건부) 스토리지의 미완료 업로드를 중단합니다. `storage_upload_id`가 비어 있는 세션(업로드 시작 도중 API가 죽은 경우)은 중단할 업로드를 모르므로 DB만 바꾸고, 스토리지 쪽은 lifecycle 규칙이 지웁니다. `COMPLETED` 세션은 절대 건드리지 않습니다. 스토리지의 lifecycle 규칙(`AbortIncompleteMultipartUpload`)도 이미 완료된 업로드에는 영향이 없습니다([S3 문서](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpu-abort-incomplete-mpu-lifecycle-config.html)).
 
 ### 4-3. 해상도별 상태와 영상 상태의 대응
 
