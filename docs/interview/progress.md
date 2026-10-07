@@ -136,7 +136,7 @@
 
 - 사용자가 push 기준을 예측 신호(채널 구독자 수 + 공개 직후 요청 증가 속도, 첫 세그먼트 몇 개)로, 매니페스트를 버전 경로로 확정했다. 재생 정보·매니페스트·세그먼트의 세 층 개념을 확인했다. ADR-0006에 기록.
 
-- 사용자 질문(2026-10-07): README의 Shield 개념과 출처. 공식 문서 확인 결과 AWS는 지역 중간층(Regional Edge Cache)과 원본 앞 한 층(Origin Shield)을 구분하고, Fastly·Cloudflare·Akamai의 shield·상위층은 원본 근처 한 곳을 뜻한다. README의 "남미 Shield"는 Regional Edge Cache에 해당하므로 용어를 "Regional cache(지역 중간 캐시)"로 바꾸고 출처를 다는 수정을 제안함(사용자 결정 대기). 출처: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/HowCloudFrontWorks.html , https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html , https://www.fastly.com/documentation/guides/concepts/shielding/ , https://developers.cloudflare.com/cache/how-to/tiered-cache/ , https://techdocs.akamai.com/property-mgr/reference/latest-tiered-distribution
+- 사용자 질문(2026-10-07): README의 Shield 개념과 출처. 공식 문서 확인 결과 AWS는 지역 중간층(Regional Edge Cache)과 원본 앞 한 층(Origin Shield)을 구분하고, Fastly·Cloudflare·Akamai의 shield·상위층은 원본 근처 한 곳을 뜻한다. README의 "남미 Shield"는 Regional Edge Cache에 해당하므로 사용자 결정으로 용어를 "Regional cache(지역 중간 캐시)"로 바꾸고 README·ADR-0006·단계 4 그림에 출처와 함께 반영했다(2026-10-07). 출처: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/HowCloudFrontWorks.html , https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html , https://www.fastly.com/documentation/guides/concepts/shielding/ , https://developers.cloudflare.com/cache/how-to/tiered-cache/ , https://techdocs.akamai.com/property-mgr/reference/latest-tiered-distribution
 
 ## 지금 대기 중인 질문
 

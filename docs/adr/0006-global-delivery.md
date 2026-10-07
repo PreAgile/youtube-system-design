@@ -61,6 +61,7 @@
 ## 6. 검증과 남은 불확실성
 
 - 계산의 지역 간 RTT, 지점 추가 RTT, 순차 왕복 횟수는 가정이며 측정하지 않았다.
+- 용어: 여기서 "중간 캐시"는 지역마다 두는 계층형 캐시의 중간층으로, AWS CloudFront Regional Edge Cache에 해당한다([문서](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/HowCloudFrontWorks.html#CloudFrontRegionaledgecaches)). 원본 근처 한 곳에 미스를 모으는 Origin Shield([문서](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html))나 Fastly Shielding과는 다른 층이며, 이 결정에는 포함하지 않았다. 2026-10-07 용어를 Shield에서 Regional cache로 바로잡았다(결정 내용 변경 아님).
 - 중간 캐시가 있을 때 캐시 미스의 실제 재생 시작 시간과 지역별 캐시 적중률은 측정해야 한다.
 - 재생 정보 캐시 수명(몇 초)과 push 기준값(구독자 수, 증가 속도 임계치), push할 세그먼트 수는 정책값으로 남아 있다.
 - CDN 단가를 확인하지 않아 비용 비교는 하지 않았다.

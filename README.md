@@ -123,7 +123,7 @@
 | 세그먼트 | 재생을 위해 변환 결과를 4초 단위로 자른 조각 |
 | 매니페스트 | 어떤 화질이 있고 각 세그먼트가 어디 있는지 적은 목록 파일 |
 | CDN | 전 세계 여러 지점에 파일 사본을 두고 가까운 곳에서 내주는 캐시 네트워크 |
-| Shield | CDN 지점들과 원본(한국 Storage) 사이에 지역마다 하나씩 두는 중간 캐시. 여러 지점의 캐시 미스를 모아 원본까지 가는 요청을 줄인다 |
+| Regional cache | CDN 지점들과 원본(한국 Storage) 사이에 지역마다 두는 중간 캐시. 같은 지역 지점들의 캐시 미스를 모아 원본까지 가는 요청을 줄인다. 계층형 캐시(tiered caching)의 중간층이며 AWS CloudFront의 [Regional Edge Cache](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/HowCloudFrontWorks.html#CloudFrontRegionaledgecaches)에 해당한다 |
 
 그림에서 사각형은 실행되는 구성요소, 타원은 저장소, 원은 CDN입니다.
 
@@ -239,13 +239,13 @@
 
 **필요한 것:** 한국에서 올린 영상을 브라질에서 볼 때도 재생 시작이 기준 네트워크 p95 2초, 취약 네트워크 p95 4초 안에 들어와야 한다(NFR-2).
 
-![단계 4: Client는 CDN에서 받고, 없으면 중간 캐시를 거쳐 한국의 API와 Storage에서 가져옴](excalidraw/exports/step4-global.svg)
+![단계 4: Client는 CDN에서 받고, 없으면 지역 중간 캐시(Regional cache)를 거쳐 한국의 API와 Storage에서 가져옴](excalidraw/exports/step4-global.svg)
 
 **이전 구조의 한계:** 모든 것이 한국 리전에 있으면 브라질에서 한 번 왕복하는 데 약 350~600ms가 걸린다. 서울–상파울루 지역 간 왕복을 약 300ms로 가정했고, 여기에 접근 네트워크 왕복이 더해진다. 재생 시작까지 왕복이 다섯 번쯤 필요하니 계산상 기준 네트워크 약 2.0초, 취약 네트워크 약 4.9초가 걸려 목표를 넘는다.
 
 **흐름**
 
-1. **영상 파일(매니페스트·세그먼트):** Client는 가까운 CDN 지점에서 받는다. 지점에 없으면 지역 중간 캐시(Shield, 예: 남미)에서, 거기에도 없으면 한국 Storage에서 가져온다. Shield가 없으면 상파울루·리우 등 남미 지점마다 각자 한국까지 가지만, Shield가 있으면 그 지역에서 한국까지 가는 요청은 영상 파일당 대략 한 번으로 줄어든다. 그 지역의 첫 시청자만 잠시 느리고, 다음 시청자부터는 가까운 곳에서 받는다.
+1. **영상 파일(매니페스트·세그먼트):** Client는 가까운 CDN 지점에서 받는다. 지점에 없으면 지역 중간 캐시(Regional cache, 예: 남미)에서, 거기에도 없으면 한국 Storage에서 가져온다. 중간 캐시가 없으면 상파울루·리우 등 남미 지점마다 각자 한국까지 가지만, 있으면 그 지역에서 한국까지 가는 요청은 영상 파일당 대략 한 번으로 줄어든다. 그 지역의 첫 시청자만 잠시 느리고, 다음 시청자부터는 가까운 곳에서 받는다.
 2. **선택적 미리 넣기(push):** 구독자가 많은 채널의 새 영상이나 공개 직후 요청이 빠르게 느는 영상은 첫 세그먼트 몇 개를 CDN에 미리 넣는다. 이미 재생 수가 많아진 뒤에는 이미 캐시돼 있어 효과가 없으므로, 몰리기 **전의** 신호로 판단한다.
 3. **재생 정보:** 공개 영상의 재생 정보는 누구에게나 같다. 그래서 CDN이 몇 초 동안 캐시한다. 응답을 합쳐 왕복 횟수도 줄인다.
 
@@ -258,6 +258,8 @@
 | 재생 정보 ("지금 최신은 vN") | 바뀜 | 몇 초 |
 
 같은 매니페스트 URL을 덮어쓰면 수백 곳의 CDN 지점은 그 변경을 알지 못한다. 그래서 오래된 목록(예: 360p만 있는 목록)을 계속 내주게 된다. 버전 경로를 쓰면 짧게 캐시할 곳이 재생 정보 하나로 줄어든다.
+
+> **용어 주의:** 여기서 말하는 지역 중간 캐시는 원본 앞에 한 곳만 두는 "shield"와 다르다. AWS의 [Origin Shield](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html), Fastly의 [Shielding](https://www.fastly.com/documentation/guides/concepts/shielding/), Cloudflare [Tiered Cache](https://developers.cloudflare.com/cache/how-to/tiered-cache/)의 상위층, Akamai [Tiered Distribution](https://techdocs.akamai.com/property-mgr/reference/latest-tiered-distribution)의 부모 서버는 모두 원본 근처에서 전 세계 미스를 한 번 더 모으는 층이다. 이 설계는 아직 그 층을 두지 않았고, 원본 부하가 문제가 될 때 검토한다.
 
 **계산으로 본 효과**
 

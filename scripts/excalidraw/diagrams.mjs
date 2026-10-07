@@ -1,4 +1,5 @@
 // Skeletons per design step. Shapes: rectangle = component, ellipse = data store, circle = CDN.
+// 'Regional cache' = CDN mid-tier per region (e.g. AWS CloudFront Regional Edge Cache), not an origin shield.
 const R=(id,x,y,t,w=150,h=70)=>({type:'rectangle',id,x,y,width:w,height:h,label:{text:t}});
 const E=(id,x,y,t,w=150,h=80)=>({type:'ellipse',id,x,y,width:w,height:h,label:{text:t}});
 const C=(id,x,y,t,d=110)=>({type:'ellipse',id,x,y,width:d,height:d,label:{text:t}});
@@ -41,13 +42,13 @@ export default [
    A('worker','store',700,280,-210,0,'segments'),
  ]},
  {name:'step4-global', els:[
-   R('client',0,140,'Client'), C('cdn',300,120,'CDN'), R('shield',560,140,'Shield'),
+   R('client',0,140,'Client'), C('cdn',300,120,'CDN'), R('regional',560,140,'Regional cache',190),
    R('api',840,0,'API'), E('store',840,240,'Storage'),
    E('rdb',1140,-5,'RDB'), R('worker',1140,240,'Worker'),
    A('client','cdn',150,175,150,0,'GET'),
-   A('cdn','shield',410,175,150,0,'miss'),
-   A('shield','api',710,155,130,-100,'info'),
-   A('shield','store',710,195,130,85,'files'),
+   A('cdn','regional',410,175,150,0,'miss'),
+   A('regional','api',750,155,90,-100,'info'),
+   A('regional','store',750,195,90,85,'files'),
    A('api','rdb',990,35,150,0),
    A('worker','rdb',1215,240,0,-165),
    A('worker','store',1140,280,-150,0),
