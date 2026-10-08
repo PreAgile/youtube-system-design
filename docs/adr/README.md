@@ -12,5 +12,7 @@
 | [0004](0004-transcoding-failure-handling.md) | 변환 실패 처리: 작업 임대 + 화질별 작업 + 재시도 상한 + 조건부 등록, 대기열은 RDB 작업 표로 시작 | Accepted | FR-2, NFR-5, NFR-6 |
 | [0005](0005-playback-segments.md) | 재생 방식: 4초 세그먼트 + 매니페스트, client가 화질 판단(HTTP) | Accepted | FR-3, FR-4, NFR-2, NFR-3, NFR-4, NFR-6, NFR-8 |
 | [0006](0006-global-delivery.md) | 글로벌 전달: CDN pull + 중간 캐시 + 예측 기반 선택적 push, 매니페스트 버전 경로, 재생 정보 짧은 CDN 캐시 | Accepted | NFR-2, NFR-4, NFR-6, FR-2, FR-3 |
+| [0007](0007-global-upload-path.md) | 해외 업로드: 청크 병렬 업로드 + 가까운 엣지 중계, 저장 기준은 한국 Storage | Accepted | FR-1, NFR-7, NFR-5 |
+| [0008](0008-object-storage-s3.md) | 객체 저장소: Amazon S3(한국 리전), 원본은 S3 Standard | Accepted | FR-1, NFR-7, NFR-2 |
 
 상세 진행 규칙은 [AGENTS.md](../../AGENTS.md), 현재 대화 위치는 [진행 상태](../interview/progress.md)를 따릅니다. 모든 질문마다 ADR을 만들지는 않습니다. Accepted 결정이 바뀌면 새 ADR로 대체 관계를 남깁니다.

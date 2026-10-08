@@ -1,10 +1,10 @@
 # 현재 연습 진행 상태
 
-갱신일: 2026-10-06
+갱신일: 2026-10-07
 
 ## 현재 단계
 
-**ADR-0001~0006 결정 완료. 단계 0~4 Excalidraw 그림과 README 8절 설계 과정 작성 완료. 다음: 해외 업로더의 업로드 경로 질문.**
+**ADR-0001~0008 결정 완료(0008: 객체 저장소 S3). README 8절 단계 0~5, 최종 구조와 요구사항별 상태, 그림 7장. PR #9 봇 리뷰 대응 여부 결정 대기.**
 
 [진행 규칙](../../AGENTS.md)과 [현재 문제 카드](../../README.md)가 기준이다. 문제 카드의 수치는 면접관이 제시한 연습용 가정이며 사용자 승인이나 구현·측정 결과가 아니다.
 
@@ -31,6 +31,8 @@
 | 처리 상태 확인 | 사용자 결정: 폴링. ADR-0002 Accepted |
 | 변환 실행·실패 처리 | 사용자 결정: 자체 작업자, 작업 임대·화질별 작업·재시도 상한·조건부 등록, RDB 작업 표로 시작. ADR-0003·0004 Accepted |
 | 재생 방식 | 사용자 결정: 4초 세그먼트 + 매니페스트, client 판단, HTTP. ADR-0005 Accepted |
+| 객체 저장소 | 사용자 결정: Amazon S3(한국 리전), 원본은 S3 Standard. README·그림의 Storage를 S3로 변경. ADR-0008 Accepted |
+| 해외 업로드 | 사용자 결정: 청크 병렬 업로드 + 가까운 엣지 중계(저장 아님), 기준은 한국 Storage. ADR-0007 Accepted |
 | 글로벌 전달 | 사용자 결정: CDN pull + 중간 캐시 + 예측 기반 선택적 push, 매니페스트 버전 경로, 재생 정보 짧은 CDN 캐시. ADR-0006 Accepted |
 | 그림 | 단계 0~4 실제 Excalidraw 내보내기(excalidraw/src, excalidraw/exports), README 8절에 연결 |
 | 구현·측정 | 아직 없음 |
@@ -138,13 +140,25 @@
 
 - 사용자 질문(2026-10-07): README의 Shield 개념과 출처. 공식 문서 확인 결과 AWS는 지역 중간층(Regional Edge Cache)과 원본 앞 한 층(Origin Shield)을 구분하고, Fastly·Cloudflare·Akamai의 shield·상위층은 원본 근처 한 곳을 뜻한다. README의 "남미 Shield"는 Regional Edge Cache에 해당하므로 사용자 결정으로 용어를 "Regional cache(지역 중간 캐시)"로 바꾸고 README·ADR-0006·단계 4 그림에 출처와 함께 반영했다(2026-10-07). 출처: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/HowCloudFrontWorks.html , https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/origin-shield.html , https://www.fastly.com/documentation/guides/concepts/shielding/ , https://developers.cloudflare.com/cache/how-to/tiered-cache/ , https://techdocs.akamai.com/property-mgr/reference/latest-tiered-distribution
 
+### 해외 업로더: 사용자 제안 (2026-10-07, 검토 중)
+
+- 사용자 제안: 브라질 CDN이 업로드 파일(청크)을 캐시하고, 지역 중간 캐시가 다시 캐시하며, 한국에서 처음 요청이 오면 그 캐시를 한국으로 가져온다.
+- 면접관 검토(LLM): 사용자 가까이에서 받는다는 방향은 맞다. 그러나 캐시는 읽기(GET)용이라 업로드(PUT·POST)는 저장하지 않고 원본으로 그대로 전달한다(AWS CloudFront 문서). 캐시는 언제든 지워질 수 있어 완료 응답 후 보존(NFR-7)을 보장할 수 없다. 원본이 브라질 캐시에만 있으면 한국 변환 작업자가 가져가기 전에 사라질 수 있다.
+- 문제의 핵심: 지역 간 RTT가 길면 연결 하나의 처리량이 떨어진다(TCP 처리량은 RTT에 반비례하는 경향, 모델 기반 설명).
+- 비교안: A 한국 Storage 직접 + 청크 병렬 업로드, B 가까운 엣지가 받아 사업자 백본으로 한국 Storage에 전달(캐시 아닌 중계, 예: S3 Transfer Acceleration), C 가까운 리전 Storage에 내구성 있게 저장 후 한국으로 비동기 복제(또는 그 리전에서 변환). 추천: A + B, C는 측정상 부족하거나 지역 저장 요구가 생길 때.
+
+- 사용자 선택: A + B. 사용자가 엣지가 "백그라운드로 비동기로" 한국에 올린다고 표현해, 엣지는 저장 없이 중계하고 한국 Storage 저장 후에 성공 응답이 온다고 바로잡았다(비동기면 캐시안과 같은 보존 문제). ADR-0007, README 단계 5, 그림 step5-global-upload에 반영. 업로드 속도 NFR은 추가하지 않았다(사용자 답 없음).
+
+- 사용자 요청(2026-10-07): 최종 구조 그림(final-overview)과 요구사항별 상태 표를 README에 추가. Storage를 S3로 변경하고 ADR-0008 작성.
+- PR #9 봇 리뷰(Sourcery, CodeRabbit, Qodo)를 확인했다. 설계 지적: 완료 재시도 시 멀티파트 상태가 사라진 경우의 복구, 완료와 변환 작업 생성의 원자성, 고화질 실패가 영상 전체 실패로 번짐, 오래된 작업자의 실패 보고가 성공을 덮음, 매니페스트 동시 발행, 캐시 미스 비율 목표 부재, 범위 밖 구독자 수 신호 의존, 파트 크기 상한 강제. 도구 지적: Accepted ADR 변경 감지 제거, verify.mjs 실패 시 종료 코드, read_text 인코딩, 갱신일. PNG 누락 지적은 사실과 다름(커밋됨). 반영 여부는 사용자 결정 대기.
+
 ## 지금 대기 중인 질문
 
-> 브라질 업로더가 20GB 원본을 한국 리전 저장소로 올립니다. 지역 간 RTT 약 300ms에서 청크 업로드는 어떤 문제가 생기고, 무엇을 바꿀까요? (관련: FR-1, NFR-7)
+> PR #9 리뷰 지적 중 무엇을 반영할지 정한다. 이후 업로드 속도 NFR 추가 여부, 같은 기기 이어보기(FR-4, NFR-8).
 
 ## 다음 단계
 
-2026-10-07 사용자 요청으로 처음 보는 사람이 읽기 쉽게 README 8절과 단계 0~4 그림을 작성했다. 새 결정이 생기면 단계와 그림을 추가한다. 남은 주제: 해외 업로드 경로, 같은 기기 이어보기·네트워크 복구(NFR-8).
+선택한 리뷰 지적을 반영한다. 설계 지적은 사용자와 검토한 뒤 해당 ADR에 반영하거나 새 ADR로 남긴다.
 
 ## 이전 작업 복구 위치
 
