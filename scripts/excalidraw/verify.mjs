@@ -12,6 +12,12 @@ for (const f of fs.readdirSync(dir+'/src')) {
     return {viewBox: svg.getAttribute('viewBox'), texts, arrows: arrows.length, bound};
   }, scene);
   const exported = fs.readFileSync(`${dir}/exports/${f.replace('.excalidraw','.svg')}`,'utf8').match(/viewBox="([^"]+)"/)[1];
-  console.log(f, r.viewBox===exported?'viewBox OK':'viewBox DIFF', `arrows ${r.bound}/${r.arrows} bound`, r.texts.join(' | '));
+  const pngPath = `${dir}/exports/${f.replace('.excalidraw','.png')}`;
+  const problems = [];
+  if (r.viewBox !== exported) problems.push('viewBox DIFF');
+  if (r.bound !== r.arrows) problems.push(`unbound arrows ${r.arrows - r.bound}`);
+  if (!fs.existsSync(pngPath)) problems.push('PNG missing');
+  if (problems.length) process.exitCode = 1;
+  console.log(f, problems.length ? problems.join(', ') : 'OK', `arrows ${r.bound}/${r.arrows} bound`, r.texts.join(' | '));
 }
 await b.close();

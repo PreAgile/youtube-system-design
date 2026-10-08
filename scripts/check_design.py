@@ -68,7 +68,7 @@ def check(root=ROOT):
     readme = root / "README.md"
     if not readme.exists():
         return ["README.md is missing"], 0
-    problem = readme.read_text()
+    problem = readme.read_text(encoding="utf-8")
     defined = re.findall(r"^\|\s*((?:FR|NFR)-\d+)\s*\|", problem, re.M)
     requirements = set(defined)
     if not any(r.startswith("FR-") for r in requirements) or not any(r.startswith("NFR-") for r in requirements):
@@ -80,7 +80,7 @@ def check(root=ROOT):
             errors.append(f"{name} is missing")
     adr_dir = root / "docs/adr"
     index_path = adr_dir / "README.md"
-    index = index_path.read_text() if index_path.exists() else ""
+    index = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
     listed = {}
     for m in re.finditer(r"^\|\s*\[(\d{4})\]\(([^)]+)\)\s*\|[^|]*\|\s*([^|]+)\|", index, re.M):
         listed[m[1]] = (m[2], m[3].strip())
@@ -89,7 +89,7 @@ def check(root=ROOT):
     if len(numbers) != len(records):
         errors.append("ADR filenames contain duplicate numbers")
     for p in records:
-        text = p.read_text()
+        text = p.read_text(encoding="utf-8")
         rel = p.relative_to(root)
         errors.extend(f"{rel}: {msg}" for msg in validate_adr(p, text, requirements))
         item = listed.get(p.name[:4])
@@ -102,14 +102,14 @@ def check(root=ROOT):
         errors.append(f"docs/adr/README.md: ADR-{number} file is missing")
     markdown_files = [p for p in root.rglob("*.md") if ".git" not in p.relative_to(root).parts]
     for p in markdown_files:
-        for target in re.findall(r"\]\(([^)\s]+)\)", p.read_text()):
+        for target in re.findall(r"\]\(([^)\s]+)\)", p.read_text(encoding="utf-8")):
             if "://" in target or target.startswith("mailto:"):
                 continue
             name, separator, fragment = target.partition("#")
             destination = p.parent / name if name else p
             if not destination.exists():
                 errors.append(f"{p.relative_to(root)}: missing link {target}")
-            elif separator and fragment and destination.suffix == ".md" and fragment not in anchors(destination.read_text()):
+            elif separator and fragment and destination.suffix == ".md" and fragment not in anchors(destination.read_text(encoding="utf-8")):
                 errors.append(f"{p.relative_to(root)}: missing heading {target}")
     return errors, len(records)
 
