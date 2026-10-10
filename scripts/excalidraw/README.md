@@ -6,6 +6,7 @@
 cd scripts/excalidraw
 npm install playwright        # 최초 1회. 브라우저가 없으면 npx playwright install chromium
 node render.mjs ../../excalidraw   # excalidraw/src/*.excalidraw, excalidraw/exports/*.svg|png 생성
+node render.mjs ../../excalidraw final-overview   # 그림 하나만 다시 생성
 node verify.mjs ../../excalidraw   # 원본을 다시 열어 텍스트·화살표 연결·크기를 확인
 ```
 

@@ -7,7 +7,8 @@ const p = await b.newPage();
 p.on('pageerror', e=>console.log('err:', e.message.slice(0,300)));
 await p.goto('file://'+process.cwd()+'/page.html');
 await p.waitForFunction('window.ready===true',null,{timeout:90000});
-for (const d of diagrams) {
+const only = process.argv[3];
+for (const d of diagrams.filter(d => !only || d.name === only)) {
   const r = await p.evaluate(async(skel)=>{
     const Ex = window.Ex;
     const els = Ex.convertToExcalidrawElements(skel.map(e=>({strokeColor:'#1e1e1e',backgroundColor:'transparent',fillStyle:'solid',strokeWidth:2,roughness:1,...e})), {regenerateIds:false});
